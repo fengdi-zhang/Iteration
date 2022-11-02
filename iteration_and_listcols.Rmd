@@ -28,45 +28,55 @@ scale_fill_discrete = scale_fill_viridis_d
 ```
 
 
-## Z-scores!!
-
-Let's compute the z-score version of a list of numbers.
+## Lists
 
 ```{r}
-x_vec = rnorm(25, mean = 5, sd = 3)
-
-(x_vec - mean(x_vec)) / sd(x_vec)
-```
-
-```{r}
-z_scores = function(x) {
-  
-  if((!is.numeric(x))) {
-    stop("Z scores only work for numbers")
-  }
-  
-  if (length(x) < 3) {
-    stop("Z scores only work if you have three or more numbers")
-  }
-  
-  z = (x - mean(x)) / sd(x)
-  z
-  
-}
-
-z_scores(x_vec)
-```
-
-```{r}
-#z_scores(3)
-#can't take sd of 3
-
+vec_numeric = 5:8
+vec_logical = c(TRUE, FALSE, TRUE, TRUE)
 ```
 
 
-## Let's have mulitple outpus
+Let's look at a list
 
-Let's get mean and sd from the vector input
+```{r}
+l = list(
+  vec_numeric = 5:8,
+  mat = matrix(1:8, 2, 4),
+  vec_logical = c(TRUE, FALSE),
+  summary = summary(rnorm(1000))
+)
+```
+
+Accessing list items
+
+```{r}
+l$vec_numeric
+```
+
+```{r}
+l[[3]]
+```
+
+
+```{r}
+l[["mat"]]
+```
+
+
+## Loops
+
+Let's write a for loop
+
+
+```{r}
+list_norms = 
+  list(
+    a = rnorm(20, 3, 1),
+    b = rnorm(20, 0, 5),
+    c = rnorm(20, 10, .2),
+    d = rnorm(20, -3, 1)
+  )
+```
 
 ```{r}
 mean_and_sd = function(x) {
@@ -83,73 +93,137 @@ mean_and_sd = function(x) {
   tibble(mean = mean_x, 
        sd = sd_x) #can also use list
 }
-
-mean_and_sd(x_vec)
 ```
 
-## Let's start with mulitple inputs!
-
 ```{r}
-x_vec = rnorm(n = 25, mean = 7, sd = 4)
+output = vector("list", length = 4) #vector of type list of length 4
 
-tibble(
-  mean = mean(x_vec),
-  sd = sd(x_vec)
-)
-```
-
-
-Can I do this using a function?
-
-```{r}
-sim_mean_sd = function(n_obs, true_mean = 7, true_sd = 4) {
-  
-  x = rnorm(n = n_obs, mean = true_mean, sd = true_sd)
-
-  tibble(
-    mean = mean(x),
-    sd = sd(x)
-  )
+for (i in 1:4) {
+  output[[i]] = mean_and_sd(list_norms[[i]])
 }
 ```
 
 ```{r}
-sim_mean_sd(25, 100, 7)
+output[1]
 ```
 
-
-## Scraping Amazon
+## Map
 
 ```{r}
-url = "https://www.amazon.com/product-reviews/B00005JNBQ/ref=cm_cr_arp_d_viewopt_rvwer?ie=UTF8&reviewerType=avp_only_reviews&sortBy=recent&pageNumber=1"
-
-dynamite_html = read_html(url)
-
-review_titles = 
-  dynamite_html %>%
-  html_nodes(".a-text-bold span") %>%
-  html_text()
-
-review_stars = 
-  dynamite_html %>%
-  html_nodes("#cm_cr-review_list .review-rating") %>%
-  html_text() %>%
-  str_extract("^\\d") %>%
-  as.numeric()
-
-review_text = 
-  dynamite_html %>%
-  html_nodes(".review-text-content span") %>%
-  html_text() %>% 
-  str_replace_all("\n", "") %>% 
-  str_trim()
-
-reviews = tibble(
-  title = review_titles,
-  stars = review_stars,
-  text = review_text
-)
+map(list_norms, mean_and_sd)
 ```
+
+```{r}
+map(list_norms, median) #outputs list
+```
+
+```{r}
+map_dbl(list_norms, median) #outputs vector
+```
+
+```{r}
+map_df(list_norms, mean_and_sd)
+```
+
+## List columns
+
+```{r}
+listcol_df = 
+  tibble(
+    name = c("a", "b", "c", "d"),
+    norm = list_norms
+  )
+```
+
+```{r}
+map(listcol_df[["norm"]], mean_and_sd)
+```
+
+```{r}
+listcol_df %>%
+  mutate(
+    m_sd = map(norm, mean_and_sd)
+  ) %>%
+  select(-norm)
+```
+
+
+## What about something more realistic
+
+```{r}
+weather_df = 
+  rnoaa::meteo_pull_monitors(
+    c("USW00094728", "USC00519397", "USS0023B17S"),
+    var = c("PRCP", "TMIN", "TMAX"), 
+    date_min = "2017-01-01",
+    date_max = "2017-12-31") %>%
+  mutate(
+    name = recode(
+      id, 
+      USW00094728 = "CentralPark_NY", 
+      USC00519397 = "Waikiki_HA",
+      USS0023B17S = "Waterhole_WA"),
+    tmin = tmin / 10,
+    tmax = tmax / 10) %>%
+  select(name, id, everything())
+```
+
+
+let's nest within weather stations..
+
+```{r}
+weather_nest_df = 
+  weather_df %>%
+  nest(data = date:tmin)
+```
+
+really is a list column!
+
+```{r}
+weather_nest_df[["data"]]
+```
+
+```{r}
+weather_nest_df[["data"]][[1]]
+
+lm(tmax ~ tmin, data = weather_nest_df[["data"]][[1]])
+```
+
+Let's write a short function
+
+```{r}
+weather_lm = function(df) {
+  lm(tmax ~ tmin, data = df)
+}
+```
+
+```{r}
+weather_lm(weather_nest_df[["data"]][[1]])
+```
+
+```{r}
+map(weather_nest_df[["data"]], weather_lm)
+```
+
+can I do all this in a tidy way
+
+```{r}
+weather_nest_df %>%
+  mutate(
+    models = map(data, weather_lm)
+  )
+```
+
+
+
+## unnesting
+
+```{r}
+weather_nest_df %>%
+  unnest(data)
+```
+
+Napoleon dynamite
 
 ```{r}
 read_page_reviews <- function(url) {
@@ -183,7 +257,9 @@ read_page_reviews <- function(url) {
     text = review_text
   )
 }
+```
 
+```{r}
 url_base = "https://www.amazon.com/product-reviews/B00005JNBQ/ref=cm_cr_arp_d_viewopt_rvwer?ie=UTF8&reviewerType=avp_only_reviews&sortBy=recent&pageNumber="
 vec_urls = str_c(url_base, 1:5)
 
@@ -194,7 +270,24 @@ dynamite_reviews = bind_rows(
   read_page_reviews(vec_urls[4]),
   read_page_reviews(vec_urls[5])
 )
+```
 
-dynamite_reviews
+```{r}
+map(vec_urls, read_page_reviews)
+```
+
+```{r}
+napoleon_reviews = 
+  tibble(
+    page = 1:5,
+    page_url = str_c(url_base, page)
+  ) %>%
+  mutate(
+    reviews = map(page_url, read_page_reviews)
+  )
+
+napoleon_reviews %>%
+  select(-page_url) %>%
+  unnest(reviews)
 ```
 
