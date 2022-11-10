@@ -1,6 +1,5 @@
-writing_functions
+simulations
 ================
-2022-10-29
 
 ## Simulations
 
@@ -28,7 +27,7 @@ sim_mean_sd(n = 30)
     ## # A tibble: 1 × 2
     ##   mu_hat sigma_hat
     ##    <dbl>     <dbl>
-    ## 1   2.89      2.98
+    ## 1   2.29      3.03
 
 How can we use this now?
 
@@ -47,16 +46,16 @@ bind_rows(output)
     ## # A tibble: 100 × 2
     ##    mu_hat sigma_hat
     ##     <dbl>     <dbl>
-    ##  1   1.62      3.29
-    ##  2   2.56      3.11
-    ##  3   1.43      2.43
-    ##  4   2.19      2.79
-    ##  5   2.28      2.63
-    ##  6   2.90      2.79
-    ##  7   3.43      3.20
-    ##  8   1.98      3.44
-    ##  9   1.63      3.44
-    ## 10   1.47      3.22
+    ##  1   1.64      3.34
+    ##  2   1.91      2.87
+    ##  3   2.13      2.21
+    ##  4   1.98      2.74
+    ##  5   3.06      2.47
+    ##  6   1.96      3.32
+    ##  7   2.06      2.72
+    ##  8   2.72      2.64
+    ##  9   2.31      2.90
+    ## 10   1.66      3.64
     ## # … with 90 more rows
 
 Let’s use list columns instead
@@ -122,10 +121,10 @@ sim_results_df %>%
     ## # A tibble: 4 × 2
     ##   sample_size em_st_err
     ##   <fct>           <dbl>
-    ## 1 N = 30          0.587
-    ## 2 N = 60          0.401
-    ## 3 N = 120         0.250
-    ## 4 N = 240         0.204
+    ## 1 N = 30          0.517
+    ## 2 N = 60          0.378
+    ## 3 N = 120         0.318
+    ## 4 N = 240         0.201
 
 ## Let’s see two inputs
 

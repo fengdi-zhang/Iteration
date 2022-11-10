@@ -1,7 +1,6 @@
 ---
-title: "writing_functions"
+title: "simulations"
 output: github_document
-date: "2022-10-29"
 ---
 
 ```{r setup, include=FALSE}
